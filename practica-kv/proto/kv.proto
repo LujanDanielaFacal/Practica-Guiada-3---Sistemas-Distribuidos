@@ -1,0 +1,67 @@
+syntax = "proto3";
+package kv;
+
+option go_package = "./proto";
+
+// Mensajes Cliente ↔ Coordinador
+message SolicitudObtener {
+    string clave = 1;
+}
+
+message RespuestaObtener {
+    bytes valor = 1;
+    bytes relojVector = 2;
+    bool existe = 3;
+}
+
+message SolicitudGuardar {
+    string clave = 1;
+    bytes valor = 2;
+    bytes relojVector = 3;
+}
+
+message RespuestaGuardar {
+    bool exito = 1;
+    bytes nuevoRelojVector = 2;
+}
+
+message SolicitudEliminar {
+    string clave = 1;
+    bytes relojVector = 2;
+}
+
+message RespuestaEliminar {
+    bool exito = 1;
+    bytes nuevoRelojVector = 2;
+}
+
+// Servicio Coordinador
+service Coordinador {
+    rpc Obtener (SolicitudObtener) returns (RespuestaObtener) {}
+    rpc Guardar (SolicitudGuardar) returns (RespuestaGuardar) {}
+    rpc Eliminar (SolicitudEliminar) returns (RespuestaEliminar) {}
+}
+
+// Mensajes y servicio para replicación interna
+message Mutacion {
+    enum Tipo {
+        GUARDAR = 0;
+        ELIMINAR = 1;
+    }
+    Tipo tipo = 1;
+    string clave = 2;
+    bytes valor = 3;
+    bytes relojVector = 4;
+}
+
+message Reconocimiento {
+    bool ok = 1;
+    bytes relojVectorAck = 2;
+}
+
+service Replica {
+    rpc ReplicarMutacion (Mutacion) returns (Reconocimiento) {}
+    rpc ObtenerLocal (SolicitudObtener) returns (RespuestaObtener) {}
+    rpc GuardarLocal (SolicitudGuardar) returns (RespuestaGuardar) {}
+    rpc EliminarLocal (SolicitudEliminar) returns (RespuestaEliminar) {}
+}
